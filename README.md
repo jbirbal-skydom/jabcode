@@ -4,11 +4,11 @@
 
 # JAB Code
 
-JAB Code (Just Another Bar Code) is a high-capacity 2D color bar code, which can encode more data than traditional black/white codes. This repository contains a library for reading and writing JAB codes, along with sample applications. A demo webinterface is available at https://jabcode.org.
+JAB Code (Just Another Bar Code) is a high-capacity 2D color bar code, which can encode more data than traditional black/white (QR) codes. This repository contains a library for reading and writing JAB codes, along with sample applications. A demo webinterface is available at https://jabcode.org.
 
 ## Introduction
 
-JAB Code is a color two-dimensional matrix symbology whose basic symbols are made of colorful square modules arranged in either square or rectangle grids. JAB Code has two types of basic symbols, named as primary symbol and secondary symbol. A JAB Code contains one primary symbol and optionally multiple secondary symbols. Primary symbol contains four finder patterns located at the corners of the symbol, while secondary symbol contains no finder pattern. A secondary symbol can be docked to a primary symbol or another docked secondary symbol in either horizontal or vertical direction. JAB Code can encode from small to large amount of data correlated to user-specified percentages of error correction.
+JAB Code is a color two-dimensional matrix symbology whose basic symbols are made of colorful square modules arranged in either square or rectangle grids. JAB Code has two types of basic symbols, named as master symbol and slave symbol. A JAB Code contains one master symbol and optionally multiple slave symbols. Master symbol contains four finder patterns located at the corners of the symbol, while slave symbol contains no finder pattern. A slave symbol can be docked to a master symbol or another docked slave symbol in either horizontal or vertical direction. JAB Code can encode from small to large amount of data correlated to user-specified percentages of error correction.
 
 A demo webinterface is [provided](https://jabcode.org/create) to evaluate the library:
 [![JAB Demo Webinterface](docs/img/jabcode_interface.png)](https://jabcode.org/create)
@@ -43,27 +43,7 @@ run `jabcodeReader --help` for the detailed usage
 ##### jabcodeWriter
 run `jabcodeWriter --help` for the detailed usage
 
-## Build Windows DLL
-Steps to build a DLL library on Windows System.
-
-Step 1: Download and install mingw-w64 from http://mingw-w64.org/.
-
-Step 2: For 64-bit Windows, Step 3 can be skipped, because the necessary libraries are already prebuilt. 
-
-Step 3: For 32-bit Windows, download the source codes of libpng, libtiff and zlib from the following sites. 
-			http://www.libpng.org/
-			http://www.libtiff.org/
-			https://www.zlib.net/
-		Build the static libraries for libpng, libtiff and zlib in mingw-64 and put the built libraries in the folder "jabcode/lib/win64" to replace the 64-bit version. 
-   
-Step 4: Rename the file "Makefile.win" to "Makefile" in the folder "jabcode".
-
-Step 5: Run "make" in mingw-64 in the folder "jabcode".
-
-Step 6: Find the built DLL library "libjabcode.dll" in the folder "jabcode/build".
-
 ## Documentation
-* The API documentation is available at [Documentation](https://jabcode.github.io/jabcode/)
-* The technical specification of the barcode is available as [BSI TR03137 - Part 2](https://www.bsi.bund.de/EN/Service-Navi/Publications/TechnicalGuidelines/TR03137/BSITR03137.html)
 
-(*Note that JabCode is under development for ISO standardization, the source code will be updated from time to time. The documentation above may therefore differ from the source code.*)
+* The API documentation is available at [Documentation](https://jabcode.github.io/jabcode/)
+* The technical specification of the barcode is available as [BSI TR03137 - Part 2](https://www.bsi.bund.de/EN/Publications/TechnicalGuidelines/TR03137/BSITR03137.html)

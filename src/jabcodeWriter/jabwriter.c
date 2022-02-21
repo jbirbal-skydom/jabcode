@@ -17,7 +17,6 @@ jab_vector2d* 	symbol_versions = 0;
 jab_int32 		symbol_versions_number = 0;
 jab_int32* 		symbol_ecc_levels = 0;
 jab_int32 		symbol_ecc_levels_number = 0;
-jab_int32		color_space = 0;
 
 /**
  * @brief Print usage of JABCode writer
@@ -27,28 +26,27 @@ void printUsage()
 	printf("\n");
 	printf("jabcodeWriter (Version %s Build date: %s) - Fraunhofer SIT\n\n", VERSION, BUILD_DATE);
 	printf("Usage:\n\n");
-	printf("jabcodeWriter --input message-to-encode --output output-image [options]\n");
+	printf("jabcodeWriter --input message-to-encode --output output-image(png) [options]\n");
 	printf("\n");
 	printf("--input\t\t\tInput data (message to be encoded).\n");
 	printf("--input-file\t\tInput data file.\n");
-    printf("--output\t\tOutput image file.\n");
-    printf("--color-number\t\tNumber of colors (4,8,default:8).\n");
-	printf("--module-size\t\tModule size in pixel (default:12 pixels).\n");
+    printf("--output\t\tOutput png file.\n");
+    printf("--color-number\t\tNumber of colors (4, 8, 16, 32, 64, 128, 256,\n\t\t\t"
+							 "default: 8).\n");
+	printf("--module-size\t\tModule size in pixel (default: 12 pixels).\n");
     printf("--symbol-width\t\tMaster symbol width in pixel.\n");
     printf("--symbol-height\t\tMaster symbol height in pixel.\n");
-	printf("--symbol-number\t\tNumber of symbols (1-61, default:1).\n");
-    printf("--ecc-level\t\tError correction levels (1-10, default:3(6%%)). If\n\t\t\t"
+	printf("--symbol-number\t\tNumber of symbols (1 - 61, default: 1).\n");
+    printf("--ecc-level\t\tError correction levels (1 - 10, default: 3(6%%)). If\n\t\t\t"
 						  "different for each symbol, starting from master and\n\t\t\t"
-						  "then slave symbols (ecc0 ecc1 ecc2...). For master\n\t\t\t"
+						  "then slave symbols (ecc0 ecc1 ecc2 ...). For master\n\t\t\t"
 						  "symbol, level 0 means using the default level, for\n\t\t\t"
 						  "slaves, it means using the same level as its host.\n");
     printf("--symbol-version\tSide-Version of each symbol, starting from master and\n\t\t\t"
-							 "then slave symbols (x0 y0 x1 y1 x2 y2...).\n");
-    printf("--symbol-position\tSymbol positions (0-60), starting from master and\n\t\t\t"
-							  "then slave symbols (p0 p1 p2...). Only required for\n\t\t\t"
+							 "then slave symbols (x0 y0 x1 y1 x2 y2 ...).\n");
+    printf("--symbol-position\tSymbol positions (0 - 60), starting from master and\n\t\t\t"
+							  "then slave symbols (p0 p1 p2 ...). Only required for\n\t\t\t"
 							  "multi-symbol code.\n");
-	printf("--color-space\t\tColor space of output image (0:RGB,1:CMYK,default:0).\n\t\t\t"
-							"RGB image is saved as PNG and CMYK image as TIFF.\n");
     printf("--help\t\t\tPrint this help.\n");
     printf("\n");
     printf("Example for 1-symbol-code: \n");
@@ -76,7 +74,6 @@ jab_boolean parseCommandLineParameters(jab_int32 para_number, jab_char* para[])
 				return 0;
 			}
             jab_char* data_string = para[++loop];
-            if(data) free(data);
             data = (jab_data *)malloc(sizeof(jab_data) + strlen(data_string) * sizeof(jab_char));
             if(!data)
             {
@@ -102,7 +99,6 @@ jab_boolean parseCommandLineParameters(jab_int32 para_number, jab_char* para[])
 			jab_int32 file_size;
 			fseek(fp, 0, SEEK_END);
 			file_size = ftell(fp);
-			if(data) free(data);
             data = (jab_data *)malloc(sizeof(jab_data) + file_size * sizeof(jab_char));
             if(!data)
             {
@@ -144,9 +140,10 @@ jab_boolean parseCommandLineParameters(jab_int32 para_number, jab_char* para[])
 				printf("Invalid or missing values for option '%s'.\n", option);
 				return 0;
 			}
-            if(color_number > 64 )
+            if(color_number != 2  && color_number != 4  && color_number != 8   && color_number != 16 &&
+			   color_number != 32 && color_number != 64 && color_number != 128 && color_number != 256)
             {
-				reportError("Invalid color number. Supported color number includes 4 and 8.");
+				reportError("Invalid color number. Valid color number includes 2, 4, 8, 16, 32, 64, 128 and 256.");
 				return 0;
             }
         }
@@ -216,27 +213,6 @@ jab_boolean parseCommandLineParameters(jab_int32 para_number, jab_char* para[])
             if(symbol_number < 1 || symbol_number > MAX_SYMBOL_NUMBER)
             {
 				reportError("Invalid symbol number (must be 1 - 61).");
-				return 0;
-            }
-        }
-		else if (0 == strcmp(para[loop],"--color-space"))
-		{
-        	char* option = para[loop];
-			if(loop + 1 > para_number - 1)
-			{
-				printf("Value for option '%s' missing.\n", option);
-                return 0;
-			}
-			char* endptr;
-			color_space = strtol(para[++loop], &endptr, 10);
-            if(*endptr)
-			{
-				printf("Invalid or missing values for option '%s'.\n", option);
-				return 0;
-			}
-            if(color_space !=0 && color_space != 1)
-            {
-				reportError("Invalid color space (must be 0 or 1).");
 				return 0;
             }
         }
@@ -478,26 +454,15 @@ int main(int argc, char *argv[])
 	}
 
 	//save bitmap in image file
-	jab_int32 result = 0;
-	if(color_space == 0)
+	if(!saveImage(enc->bitmap, filename))
 	{
-		if(!saveImage(enc->bitmap, filename))
-		{
-			reportError("Saving png image failed");
-			result = 1;
-		}
+		reportError("Saving png image failed");
+		destroyEncode(enc);
+		cleanMemory();
+		return 1;
 	}
-	else if(color_space == 1)
-	{
-		if(!saveImageCMYK(enc->bitmap, 0, filename))
-		{
-			reportError("Saving tiff image failed");
-			result = 1;
-		}
-	}
-
 	destroyEncode(enc);
 	cleanMemory();
-	return result;
+	return 0;
 }
 

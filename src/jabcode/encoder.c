@@ -96,10 +96,12 @@ void setDefaultPalette(jab_int32 color_number, jab_byte* palette)
 {
     if(color_number == 4)
     {
-    	memcpy(palette + 0, jab_default_palette + FP0_CORE_COLOR * 3, 3);	//black   000 for 00
-    	memcpy(palette + 3, jab_default_palette + 5 * 3, 3);				//magenta 101 for 01
-    	memcpy(palette + 6, jab_default_palette + FP2_CORE_COLOR * 3, 3);	//yellow  110 for 10
-    	memcpy(palette + 9, jab_default_palette + FP3_CORE_COLOR * 3, 3);	//cyan    011 for 11
+    	memcpy(palette + 0, jab_default_palette + FP0_CORE_COLOR * 3, 3);
+    	memcpy(palette + 3, jab_default_palette + FP1_CORE_COLOR * 3, 3);
+    	memcpy(palette + 6, jab_default_palette + FP2_CORE_COLOR * 3, 3);
+    	memcpy(palette + 9, jab_default_palette + FP3_CORE_COLOR * 3, 3);
+    	memcpy(palette + 12,jab_default_palette + AP0_CORE_COLOR * 3, 3);
+    	memcpy(palette + 15,jab_default_palette + APX_CORE_COLOR * 3, 3);
     }
     else if(color_number == 8)
     {
@@ -194,7 +196,14 @@ jab_encode* createEncode(jab_int32 color_number, jab_int32 symbol_number)
     enc->module_size 		 = DEFAULT_MODULE_SIZE;
 
     //set default color palette
-	enc->palette = (jab_byte *)calloc(color_number * 3, sizeof(jab_byte));
+    if(enc->color_number == 4)
+	{
+		enc->palette = (jab_byte *)calloc(6 * 3, sizeof(jab_byte));
+	}
+	else
+	{
+		enc->palette = (jab_byte *)calloc(color_number * 3, sizeof(jab_byte));
+	}
     if(enc->palette == NULL)
     {
         reportError("Memory allocation for palette failed");
@@ -458,7 +467,6 @@ jab_int32* analyzeInputData(jab_data* input, jab_int32* encoded_length)
     //->>length will be increased by 13
     jab_int32 counter=0;
     jab_int32 seq_len=0;
-	jab_int32 modeswitch=0;
     encode_seq[curr_seq_counter]=current_mode;//prev_mode[(curr_seq_counter)*14+current_mode];//prev_mode[(curr_seq_counter+is_shift-1)*14+current_mode];
     seq_len+=character_size[encode_seq[curr_seq_counter]%7];
     for (jab_int32 i=curr_seq_counter;i>0;i--)
@@ -471,38 +479,7 @@ jab_int32* analyzeInputData(jab_data* input, jab_int32* encoded_length)
             {
                 encode_seq_length+=13;
                 seq_len+=13;
-
-				//--------------------------------
-				if(counter>8207) //2^13+15
-				{
-					if (encode_seq[i]==0 || encode_seq[i]==1 || encode_seq[i]==7 || encode_seq[i]==8)
-						modeswitch=11;
-					if (encode_seq[i]==2 || encode_seq[i]==9)
-						modeswitch=10;
-					if (encode_seq[i]==5 || encode_seq[i]==12)
-						modeswitch=12;
-					jab_int32 remain_in_byte_mode=counter/8207;
-					jab_int32 remain_in_byte_mode_residual=counter%8207;
-					encode_seq_length+=(remain_in_byte_mode) * modeswitch;
-					seq_len+=(remain_in_byte_mode) * modeswitch;
-					if(remain_in_byte_mode_residual<16)
-					{
-						encode_seq_length+=(remain_in_byte_mode-1) * 13;
-						seq_len+=(remain_in_byte_mode-1) * 13;
-					}
-					else
-					{
-						encode_seq_length+=remain_in_byte_mode * 13;
-						seq_len+=remain_in_byte_mode * 13;
-					}
-					if(remain_in_byte_mode_residual==0)
-					{
-						encode_seq_length-= modeswitch;
-						seq_len-= modeswitch;
-					}
-				}
-				//--------------------------------
-				counter=0;
+                counter=0;
             }
         }
         if (encode_seq[i]<14 && i-1!=0)
@@ -521,33 +498,7 @@ jab_int32* analyzeInputData(jab_data* input, jab_int32* encoded_length)
             {
                 encode_seq_length+=13;
                 seq_len+=13;
-
-				//--------------------------------
-				if(counter>8207) //2^13+15
-				{
-					modeswitch=11;
-					jab_int32 remain_in_byte_mode=counter/8207;
-					jab_int32 remain_in_byte_mode_residual=counter%8207;
-					encode_seq_length+=remain_in_byte_mode * modeswitch;
-					seq_len+=remain_in_byte_mode * modeswitch;
-					if(remain_in_byte_mode_residual<16)
-					{
-						encode_seq_length+=(remain_in_byte_mode-1) * 13;
-						seq_len+=(remain_in_byte_mode-1) * 13;
-					}
-					else
-					{
-						encode_seq_length+=remain_in_byte_mode * 13;
-						seq_len+=remain_in_byte_mode * 13;
-					}
-					if(remain_in_byte_mode_residual==0)
-					{
-						encode_seq_length-= modeswitch;
-						seq_len-= modeswitch;
-					}
-				}
-				//--------------------------------
-				counter=0;
+                counter=0;
             }
         }
         else
@@ -586,7 +537,7 @@ jab_int32 getMetadataLength(jab_encode* enc, jab_int32 index)
 {
     jab_int32 length = 0;
 
-    if (index == 0) //master symbol, the encoded length
+    if (index == 0) //master symbol, encoded length
     {
     	//default mode, no metadata
     	if(isDefaultMode(enc))
@@ -596,12 +547,36 @@ jab_int32 getMetadataLength(jab_encode* enc, jab_int32 index)
 		else
 		{
 			//Part I
-			length += MASTER_METADATA_PART1_LENGTH;
+			length += 6;
 			//Part II
-			length += MASTER_METADATA_PART2_LENGTH;
+			length += 12;
+			//Part III
+			length += 12;	//E in Part III
+			//V in Part III
+			jab_int32 longerSide = enc->symbol_versions[index].x > enc->symbol_versions[index].y ? enc->symbol_versions[index].x : enc->symbol_versions[index].y;
+			if(enc->symbol_versions[index].x != enc->symbol_versions[index].y) //Rectangle symbol
+			{
+				if (longerSide < 5)
+					length += 8;
+				else if (longerSide < 9)
+					length += 12;
+				else if (longerSide < 17)
+					length += 16;
+				else
+					length += 20;
+			}
+			else //Square symbol
+			{
+				if (longerSide < 9)
+					length += 4;
+				else if (longerSide < 17)
+					length += 6;
+				else
+					length += 8;
+			}
 		}
     }
-    else //slave symbol, the original net length
+    else //slave symbol, original length
     {
     	//Part I
         length += 2;
@@ -640,13 +615,15 @@ jab_int32 getSymbolCapacity(jab_encode* enc, jab_int32 index)
 		nb_modules_fp = 4 * 7;
 	}
     //number of modules for color palette
-    jab_int32 nb_modules_palette = enc->color_number > 64 ? (64-2)*COLOR_PALETTE_NUMBER : (enc->color_number-2)*COLOR_PALETTE_NUMBER;
+    jab_int32 nb_modules_palette = enc->color_number > 64 ? 64*2 : enc->color_number * 2;
 	//number of modules for alignment pattern
 	jab_int32 side_size_x = VERSION2SIZE(enc->symbol_versions[index].x);
 	jab_int32 side_size_y = VERSION2SIZE(enc->symbol_versions[index].y);
-	jab_int32 number_of_aps_x = jab_ap_num[enc->symbol_versions[index].x - 1];
-	jab_int32 number_of_aps_y = jab_ap_num[enc->symbol_versions[index].y - 1];
-	jab_int32 nb_modules_ap = (number_of_aps_x * number_of_aps_y - 4) * 7;
+	jab_int32 number_of_aps_x = (side_size_x-(DISTANCE_TO_BORDER*2-1)) / MINIMUM_DISTANCE_BETWEEN_ALIGNMENTS - 1;
+	jab_int32 number_of_aps_y = (side_size_y-(DISTANCE_TO_BORDER*2-1)) / MINIMUM_DISTANCE_BETWEEN_ALIGNMENTS - 1;
+	if (number_of_aps_x < 0)	number_of_aps_x = 0;
+	if (number_of_aps_y < 0)	number_of_aps_y = 0;
+	jab_int32 nb_modules_ap = ((number_of_aps_x+2) * (number_of_aps_y+2) - 4) * 7;
 	//number of modules for metadata
 	jab_int32 nb_of_bpm = log(enc->color_number) / log(2);
 	jab_int32 nb_modules_metadata = 0;
@@ -655,12 +632,12 @@ jab_int32 getSymbolCapacity(jab_encode* enc, jab_int32 index)
 		jab_int32 nb_metadata_bits = getMetadataLength(enc, index);
 		if(nb_metadata_bits > 0)
 		{
-			nb_modules_metadata = (nb_metadata_bits - MASTER_METADATA_PART1_LENGTH) / nb_of_bpm; //only modules for PartII
-			if((nb_metadata_bits - MASTER_METADATA_PART1_LENGTH) % nb_of_bpm != 0)
+			nb_modules_metadata = (nb_metadata_bits - 6) / nb_of_bpm; //modules for PartII and PartIII
+			if((nb_metadata_bits - 6) % nb_of_bpm != 0)
 			{
 				nb_modules_metadata++;
 			}
-			nb_modules_metadata += MASTER_METADATA_PART1_MODULE_NUMBER; //add modules for PartI
+			nb_modules_metadata += 6; //add black/white modules for PartI
 		}
 	}
 	jab_int32 capacity = (side_size_x*side_size_y - nb_modules_fp - nb_modules_ap - nb_modules_palette - nb_modules_metadata) * nb_of_bpm;
@@ -716,7 +693,6 @@ jab_data* encodeData(jab_data* data, jab_int32 encoded_length,jab_int32* encode_
     jab_int32 end_of_loop=data->length;
     jab_int32 byte_offset=0;
     jab_int32 byte_counter=0;
-	jab_int32 factor=1;
     //encoding starts in upper case mode
     for (jab_int32 i=0;i<end_of_loop;i++)
     {
@@ -806,51 +782,11 @@ jab_data* encodeData(jab_data* data, jab_int32 encoded_length,jab_int32* encode_
                     position+=4;
                     if(byte_counter > 15)
                     {
-						if(byte_counter <= 8207)//8207=2^13+15; if number of bytes exceeds 8207, encoder shall shift to byte mode again from upper case mode && byte_counter < 8207
-						{
-							convert_dec_to_bin(byte_counter-15-1,encoded_data->data,position,13);
-						}
-						else
-						{
-							convert_dec_to_bin(8191,encoded_data->data,position,13);
-						}
+                        convert_dec_to_bin(byte_counter-15-1,encoded_data->data,position,13);
                         position+=13;
                     }
                     byte_offset=byte_counter;
                 }
-				if(byte_offset-byte_counter==factor*8207) //byte mode exceeds 2^13 + 15
-				{
-					if(encode_seq[counter-(byte_offset-byte_counter)]==0 || encode_seq[counter-(byte_offset-byte_counter)]==7 || encode_seq[counter-(byte_offset-byte_counter)]==1|| encode_seq[counter-(byte_offset-byte_counter)]==8)
-					{
-						convert_dec_to_bin(124,encoded_data->data,position,7);// shift from upper case to byte
-						position+=7;
-					}
-					if(encode_seq[counter-(byte_offset-byte_counter)]==2 || encode_seq[counter-(byte_offset-byte_counter)]==9)
-					{
-						convert_dec_to_bin(60,encoded_data->data,position,5);// shift from numeric to byte
-						position+=5;
-					}
-					if(encode_seq[counter-(byte_offset-byte_counter)]==5 || encode_seq[counter-(byte_offset-byte_counter)]==12)
-					{
-						convert_dec_to_bin(252,encoded_data->data,position,8);// shift from alphanumeric to byte
-						position+=8;
-					}
-					convert_dec_to_bin(byte_counter > 15 ? 0 : byte_counter,encoded_data->data,position,4); //write the first 4 bits
-					position+=4;
-					if(byte_counter > 15) //if more than 15 bytes -> use the next 13 bits to wirte the length
-					{
-						if(byte_counter <= 8207)//8207=2^13+15; if number of bytes exceeds 8207, encoder shall shift to byte mode again from upper case mode && byte_counter < 8207
-						{
-							convert_dec_to_bin(byte_counter-15-1,encoded_data->data,position,13);
-						}
-						else //number exceeds 2^13 + 15
-						{
-							convert_dec_to_bin(8191,encoded_data->data,position,13);
-						}
-						position+=13;
-					}
-					factor++;
-				}
                 if (character_size[encode_seq[counter+1]%7] < ENC_MAX)
                     convert_dec_to_bin(tmp,encoded_data->data,position,character_size[encode_seq[counter+1]%7]);
                 else
@@ -873,7 +809,6 @@ jab_data* encodeData(jab_data* data, jab_int32 encoded_length,jab_int32* encode_
                 shift_back=0;
                 byte_offset=0;
             }
-
         }
         else
         {
@@ -893,17 +828,78 @@ jab_data* encodeData(jab_data* data, jab_int32 encoded_length,jab_int32* encode_
 */
 jab_boolean encodeMasterMetadata(jab_encode* enc)
 {
-	jab_int32 partI_length 	= MASTER_METADATA_PART1_LENGTH/2;	//partI net length
-	jab_int32 partII_length	= MASTER_METADATA_PART2_LENGTH/2;	//partII net length
-	jab_int32 V_length = 10;
+	//part I in master
+	jab_int32 Nc, SS, VF, MSK, V, E1, E2;
+	jab_int32 partI_length 	= 3;
+	jab_int32 partII_length	= 6;
+	jab_int32 partIII_length= 0;
+	jab_int32 V_length;
 	jab_int32 E_length = 6;
-	jab_int32 MSK_length = 3;
 	//set master metadata variables
-	jab_int32 Nc = log(enc->color_number)/log(2.0) - 1;
-	jab_int32 V = ((enc->symbol_versions[0].x -1) << 5) + (enc->symbol_versions[0].y - 1);
-	jab_int32 E1 = enc->symbols[0].wcwr[0] - 3;
-	jab_int32 E2 = enc->symbols[0].wcwr[1] - 4;
-	jab_int32 MSK = DEFAULT_MASKING_REFERENCE;
+	Nc = log(enc->color_number)/log(2.0) - 1;
+	if(enc->symbol_versions[0].x == enc->symbol_versions[0].y)
+		SS = 0;
+	else
+		SS = 1;
+	if(SS == 0)
+	{
+		if(enc->symbol_versions[0].x < 5)
+		{
+			VF = 0;
+			V = enc->symbol_versions[0].x - 1;
+			V_length = 2;
+
+		}
+		else if(enc->symbol_versions[0].x < 9)
+		{
+			VF = 1;
+			V = enc->symbol_versions[0].x - 4 - 1;
+			V_length = 2;
+		}
+		else if(enc->symbol_versions[0].x < 17)
+		{
+			VF = 2;
+			V = enc->symbol_versions[0].x - 8 - 1;
+			V_length = 3;
+		}
+		else
+		{
+			VF = 3;
+			V = enc->symbol_versions[0].x - 16 - 1;
+			V_length = 4;
+		}
+	}
+	else
+	{
+		if(enc->symbol_versions[0].x < 5 && enc->symbol_versions[0].y < 5)
+		{
+			VF = 0;
+			V = ((enc->symbol_versions[0].x - 1) << 2) + (enc->symbol_versions[0].y - 1);
+			V_length = 4;
+		}
+		else if(enc->symbol_versions[0].x < 9 && enc->symbol_versions[0].y < 9)
+		{
+			VF = 1;
+			V = ((enc->symbol_versions[0].x - 1) << 3) + (enc->symbol_versions[0].y - 1);
+			V_length = 6;
+		}
+		else if(enc->symbol_versions[0].x < 17 && enc->symbol_versions[0].y < 17)
+		{
+			VF = 2;
+			V = ((enc->symbol_versions[0].x - 1) << 4) + (enc->symbol_versions[0].y - 1);
+			V_length = 8;
+		}
+		else
+		{
+			VF = 3;
+			V = ((enc->symbol_versions[0].x -1) << 5) + (enc->symbol_versions[0].y - 1);
+			V_length = 10;
+		}
+	}
+	MSK = DEFAULT_MASKING_REFERENCE;
+	E1 = enc->symbols[0].wcwr[0] - 3;
+	E2 = enc->symbols[0].wcwr[1] - 4;
+	partIII_length += (V_length + E_length);
 
 	//write each part of master metadata
 	//Part I
@@ -923,10 +919,20 @@ jab_boolean encodeMasterMetadata(jab_encode* enc)
 		return JAB_FAILURE;
 	}
 	partII->length = partII_length;
-	convert_dec_to_bin(V,   partII->data, 0, V_length);
-	convert_dec_to_bin(E1,  partII->data, V_length, 3);
-	convert_dec_to_bin(E2,  partII->data, V_length+3, 3);
-	convert_dec_to_bin(MSK, partII->data, V_length+E_length, MSK_length);
+	convert_dec_to_bin(SS,  partII->data, 0, 1);
+	convert_dec_to_bin(VF,  partII->data, 1, 2);
+	convert_dec_to_bin(MSK, partII->data, 3, 3);
+	//Part III
+	jab_data* partIII = (jab_data *)malloc(sizeof(jab_data) + partIII_length*sizeof(jab_char));
+	if(partIII == NULL)
+	{
+		reportError("Memory allocation for metadata Part III in master symbol failed");
+		return JAB_FAILURE;
+	}
+	partIII->length = partIII_length;
+	convert_dec_to_bin(V,  partIII->data, 0, V_length);
+	convert_dec_to_bin(E1, partIII->data, V_length, 3);
+	convert_dec_to_bin(E2, partIII->data, V_length+3, 3);
 
 	//encode each part of master metadata
 	jab_int32 wcwr[2] = {2, -1};
@@ -944,8 +950,15 @@ jab_boolean encodeMasterMetadata(jab_encode* enc)
 		reportError("LDPC encoding master metadata Part II failed");
 		return JAB_FAILURE;
 	}
+	//Part III
+	jab_data* encoded_partIII = encodeLDPC(partIII, wcwr);
+	if(encoded_partIII == NULL)
+	{
+		reportError("LDPC encoding master metadata Part III failed");
+		return JAB_FAILURE;
+	}
 
-	jab_int32 encoded_metadata_length = encoded_partI->length + encoded_partII->length;
+	jab_int32 encoded_metadata_length = encoded_partI->length + encoded_partII->length + encoded_partIII->length;
 	enc->symbols[0].metadata = (jab_data *)malloc(sizeof(jab_data) + encoded_metadata_length*sizeof(jab_char));
 	if(enc->symbols[0].metadata == NULL)
 	{
@@ -956,11 +969,14 @@ jab_boolean encodeMasterMetadata(jab_encode* enc)
 	//copy encoded parts into metadata
 	memcpy(enc->symbols[0].metadata->data, encoded_partI->data, encoded_partI->length);
 	memcpy(enc->symbols[0].metadata->data+encoded_partI->length, encoded_partII->data, encoded_partII->length);
+	memcpy(enc->symbols[0].metadata->data+encoded_partI->length+encoded_partII->length, encoded_partIII->data, encoded_partIII->length);
 
 	free(partI);
 	free(partII);
+	free(partIII);
 	free(encoded_partI);
 	free(encoded_partII);
+	free(encoded_partIII);
     return JAB_SUCCESS;
 }
 
@@ -972,29 +988,41 @@ jab_boolean encodeMasterMetadata(jab_encode* enc)
 */
 jab_boolean updateMasterMetadataPartII(jab_encode* enc, jab_int32 mask_ref)
 {
-	jab_int32 partII_length	= MASTER_METADATA_PART2_LENGTH/2;	//partII net length
-	jab_data* partII = (jab_data *)malloc(sizeof(jab_data) + partII_length*sizeof(jab_char));
+	//Part II
+	jab_data* partII = (jab_data *)malloc(sizeof(jab_data) + 6*sizeof(jab_char));
 	if(partII == NULL)
 	{
 		reportError("Memory allocation for metadata Part II in master symbol failed");
 		return JAB_FAILURE;
 	}
-	partII->length = partII_length;
-
-	//set V and E
-	jab_int32 V_length = 10;
-	jab_int32 E_length = 6;
-	jab_int32 MSK_length = 3;
-	jab_int32 V = ((enc->symbol_versions[0].x -1) << 5) + (enc->symbol_versions[0].y - 1);
-	jab_int32 E1 = enc->symbols[0].wcwr[0] - 3;
-	jab_int32 E2 = enc->symbols[0].wcwr[1] - 4;
-	convert_dec_to_bin(V,   partII->data, 0, V_length);
-	convert_dec_to_bin(E1,  partII->data, V_length, 3);
-	convert_dec_to_bin(E2,  partII->data, V_length+3, 3);
-
+	partII->length = 6;
+	//set SS and VF
+	if(enc->symbol_versions[0].x == enc->symbol_versions[0].y)
+		partII->data[0] = 0;
+	else
+		partII->data[0] = 1;
+	if(enc->symbol_versions[0].x < 5 && enc->symbol_versions[0].y < 5)
+	{
+		partII->data[1] = 0;
+		partII->data[2] = 0;
+	}
+	else if(enc->symbol_versions[0].x < 9 && enc->symbol_versions[0].y < 9)
+	{
+		partII->data[1] = 0;
+		partII->data[2] = 1;
+	}
+	else if(enc->symbol_versions[0].x < 17 && enc->symbol_versions[0].y < 17)
+	{
+		partII->data[1] = 1;
+		partII->data[2] = 0;
+	}
+	else
+	{
+		partII->data[1] = 1;
+		partII->data[2] = 1;
+	}
 	//update masking reference in PartII
-	convert_dec_to_bin(mask_ref, partII->data, V_length+E_length, MSK_length);
-
+	convert_dec_to_bin(mask_ref, partII->data, 3, 3);
 	//encode new PartII
 	jab_int32 wcwr[2] = {2, -1};
 	jab_data* encoded_partII = encodeLDPC(partII, wcwr);
@@ -1004,7 +1032,7 @@ jab_boolean updateMasterMetadataPartII(jab_encode* enc, jab_int32 mask_ref)
 		return JAB_FAILURE;
 	}
 	//update metadata
-	memcpy(enc->symbols[0].metadata->data+MASTER_METADATA_PART1_LENGTH, encoded_partII->data, encoded_partII->length);
+	memcpy(enc->symbols[0].metadata->data+6, encoded_partII->data, encoded_partII->length);
 
 	free(partII);
 	free(encoded_partII);
@@ -1023,16 +1051,16 @@ void placeMasterMetadataPartII(jab_encode* enc)
     jab_int32 y = MASTER_METADATA_Y;
     jab_int32 module_count = 0;
     //skip PartI and color palette
-    jab_int32 color_palette_size = MIN(enc->color_number-2, 64-2);
-    jab_int32 module_offset = MASTER_METADATA_PART1_MODULE_NUMBER + color_palette_size*COLOR_PALETTE_NUMBER;
+    jab_int32 color_palette_size = MIN(enc->color_number, 64);
+    jab_int32 module_offset = 6 + color_palette_size*2;
     for(jab_int32 i=0; i<module_offset; i++)
 	{
 		module_count++;
         getNextMetadataModuleInMaster(enc->symbols[0].side_size.y, enc->symbols[0].side_size.x, module_count, &x, &y);
 	}
 	//update PartII
-	jab_int32 partII_bit_start = MASTER_METADATA_PART1_LENGTH;
-	jab_int32 partII_bit_end = MASTER_METADATA_PART1_LENGTH + MASTER_METADATA_PART2_LENGTH;
+	jab_int32 partII_bit_start = 6;
+	jab_int32 partII_bit_end = 17;
 	jab_int32 metadata_index = partII_bit_start;
 	while(metadata_index <= partII_bit_end)
 	{
@@ -1135,68 +1163,79 @@ jab_boolean createMatrix(jab_encode* enc, jab_int32 index, jab_data* ecc_encoded
     }
     memset(enc->symbols[index].data_map, 1, enc->symbols[index].side_size.x * enc->symbols[index].side_size.y * sizeof(jab_byte));
 
+    //calculate number of alignment pattern depending on the side_size and their positions
+    jab_int32 number_of_alignment_pattern_x = (enc->symbols[index].side_size.x-(DISTANCE_TO_BORDER*2-1))/MINIMUM_DISTANCE_BETWEEN_ALIGNMENTS-1;
+    jab_int32 number_of_alignment_pattern_y = (enc->symbols[index].side_size.y-(DISTANCE_TO_BORDER*2-1))/MINIMUM_DISTANCE_BETWEEN_ALIGNMENTS-1;
+    if (number_of_alignment_pattern_x < 0)
+        number_of_alignment_pattern_x=0;
+    if (number_of_alignment_pattern_y < 0)
+        number_of_alignment_pattern_y=0;
+    jab_float alignment_distance_x;
+    jab_float alignment_distance_y;
+    if(number_of_alignment_pattern_x != 0)
+        alignment_distance_x = (jab_float)(enc->symbols[index].side_size.x-(DISTANCE_TO_BORDER*2-1))/((jab_float)number_of_alignment_pattern_x+1.0f);
+    else
+        alignment_distance_x = (jab_float)(enc->symbols[index].side_size.x-(DISTANCE_TO_BORDER*2-1));
+    if(number_of_alignment_pattern_y!=0)
+        alignment_distance_y = (jab_float)(enc->symbols[index].side_size.y-(DISTANCE_TO_BORDER*2-1))/((jab_float)number_of_alignment_pattern_y+1.0f);
+    else
+        alignment_distance_y = (jab_float)(enc->symbols[index].side_size.y-(DISTANCE_TO_BORDER*2-1));
+
+    jab_int32 x_offset;
+    jab_int32 y_offset;
+    jab_byte left;
     //set alignment patterns
     jab_int32 Nc = log(enc->color_number)/log(2.0) - 1;
 	jab_byte apx_core_color = apx_core_color_index[Nc];
 	jab_byte apx_peri_color = apn_core_color_index[Nc];
-	jab_int32 side_ver_x_index = SIZE2VERSION(enc->symbols[index].side_size.x) - 1;
-	jab_int32 side_ver_y_index = SIZE2VERSION(enc->symbols[index].side_size.y) - 1;
-    for(jab_int32 x=0; x<jab_ap_num[side_ver_x_index]; x++)
+
+    for(jab_int32 i=0;i<=number_of_alignment_pattern_x+1;i++)
     {
-    	jab_byte left;
-        if (x%2 == 1)
+        if (i%2 == 1)
             left=0;
         else
             left=1;
-        for(jab_int32 y=0; y<jab_ap_num[side_ver_y_index]; y++)
+        for(jab_int32 j=0;j<=number_of_alignment_pattern_y+1;j++)
         {
-            jab_int32 x_offset = jab_ap_pos[side_ver_x_index][x] - 1;
-            jab_int32 y_offset = jab_ap_pos[side_ver_y_index][y] - 1;
+            x_offset=DISTANCE_TO_BORDER+i*alignment_distance_x;
+            y_offset=DISTANCE_TO_BORDER+j*alignment_distance_y;
             //left alignment patterns
-            if(	left == 1
-				&& (x != 0 || y != 0)
-				&& (x != 0 || y != jab_ap_num[side_ver_y_index]-1)
-				&& (x != jab_ap_num[side_ver_x_index]-1 || y != 0)
-				&& (x != jab_ap_num[side_ver_x_index]-1 || y != jab_ap_num[side_ver_y_index]-1))
+            if((i != 0 || j!=0) && (i != 0 || j!=(number_of_alignment_pattern_y+1)) && (i != (number_of_alignment_pattern_x+1) || j!=0) && (i != number_of_alignment_pattern_x+1 || j!=number_of_alignment_pattern_y+1) && left==1)
             {
-            	enc->symbols[index].matrix[(y_offset-1)*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].matrix[(y_offset-1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].matrix[(y_offset  )*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].matrix[(y_offset  )*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].matrix[(y_offset+1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].matrix[(y_offset+1)*enc->symbols[index].side_size.x + x_offset+1]=apx_peri_color;
-				enc->symbols[index].matrix[(y_offset  )*enc->symbols[index].side_size.x + x_offset  ]=apx_core_color;
+            	enc->symbols[index].matrix[(y_offset-2) *enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].matrix[(y_offset-2) *enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].matrix[(y_offset-1) *enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].matrix[(y_offset-1) *enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].matrix[y_offset     *enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].matrix[y_offset     *enc->symbols[index].side_size.x + x_offset   ]=apx_peri_color;
+				enc->symbols[index].matrix[(y_offset-1) *enc->symbols[index].side_size.x + x_offset-1 ]=apx_core_color;
 
-				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].data_map[(y_offset  )*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].data_map[(y_offset  )*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].data_map[(y_offset+1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].data_map[(y_offset+1)*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].data_map[(y_offset  )*enc->symbols[index].side_size.x + x_offset  ]=0;
+				enc->symbols[index].data_map[(y_offset-2)*enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].data_map[(y_offset-2)*enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].data_map[y_offset    *enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].data_map[y_offset    *enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset-1 ]=0;
             }
             //right alignment patterns
-            else if(left == 0
-					&& (x != 0 || y != 0)
-					&& (x != 0 || y != jab_ap_num[side_ver_y_index]-1)
-					&& (x != jab_ap_num[side_ver_x_index]-1 || y != 0)
-					&& (x != jab_ap_num[side_ver_x_index]-1 || y != jab_ap_num[side_ver_y_index]-1))
+            else if((i != 0 || j!=0) && (i != 0 || j!=(number_of_alignment_pattern_y+1)) && (i != (number_of_alignment_pattern_x+1) || j!=0) && (i != number_of_alignment_pattern_x+1 || j!=number_of_alignment_pattern_y+1) && left==0)
             {
-            	enc->symbols[index].matrix[(y_offset-1)*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].matrix[(y_offset-1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].matrix[(y_offset  )*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].matrix[(y_offset  )*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].matrix[(y_offset+1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].matrix[(y_offset+1)*enc->symbols[index].side_size.x + x_offset-1]=apx_peri_color;
-				enc->symbols[index].matrix[(y_offset  )*enc->symbols[index].side_size.x + x_offset  ]=apx_core_color;
+            	enc->symbols[index].matrix[(y_offset-2) *enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].matrix[(y_offset-2) *enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].matrix[(y_offset-1) *enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].matrix[(y_offset-1) *enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].matrix[y_offset     *enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].matrix[y_offset     *enc->symbols[index].side_size.x + x_offset-2 ]=apx_peri_color;
+				enc->symbols[index].matrix[(y_offset-1) *enc->symbols[index].side_size.x + x_offset-1 ]=apx_core_color;
 
-				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].data_map[(y_offset  )*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].data_map[(y_offset  )*enc->symbols[index].side_size.x + x_offset+1]=
-				enc->symbols[index].data_map[(y_offset+1)*enc->symbols[index].side_size.x + x_offset  ]=
-				enc->symbols[index].data_map[(y_offset+1)*enc->symbols[index].side_size.x + x_offset-1]=
-				enc->symbols[index].data_map[(y_offset  )*enc->symbols[index].side_size.x + x_offset  ]=0;
+				enc->symbols[index].data_map[(y_offset-2)*enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].data_map[(y_offset-2)*enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset   ]=
+				enc->symbols[index].data_map[y_offset    *enc->symbols[index].side_size.x + x_offset-1 ]=
+				enc->symbols[index].data_map[y_offset    *enc->symbols[index].side_size.x + x_offset-2 ]=
+				enc->symbols[index].data_map[(y_offset-1)*enc->symbols[index].side_size.x + x_offset-1 ]=0;
             }
             if (left==0)
                 left=1;
@@ -1312,49 +1351,40 @@ jab_boolean createMatrix(jab_encode* enc, jab_int32 index, jab_data* ecc_encoded
         //metadata Part I
         if(!isDefaultMode(enc))
 		{
-			while(metadata_index < enc->symbols[index].metadata->length && metadata_index < MASTER_METADATA_PART1_LENGTH)
+			while(metadata_index < enc->symbols[index].metadata->length && metadata_index < 6)
 			{
-				//Read 3 bits from encoded PartI each time
-				jab_byte bit1 = enc->symbols[index].metadata->data[metadata_index + 0];
-				jab_byte bit2 = enc->symbols[index].metadata->data[metadata_index + 1];
-				jab_byte bit3 = enc->symbols[index].metadata->data[metadata_index + 2];
-				jab_int32 val = (bit1 << 2) + (bit2 << 1) + bit3;
-				//place two modules according to the value of every 3 bits
-                for(jab_int32 i=0; i<2; i++)
-				{
-					color_index = nc_color_encode_table[val][i] % enc->color_number;
-					enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x + x] = color_index;
-					enc->symbols[index].data_map[y*enc->symbols[index].side_size.x + x] = 0;
-					module_count++;
-					getNextMetadataModuleInMaster(enc->symbols[index].side_size.y, enc->symbols[index].side_size.x, module_count, &x, &y);
-				}
-				metadata_index += 3;
+				color_index = enc->symbols[index].metadata->data[metadata_index] == 0 ? apn_core_color_index[Nc] : apx_core_color_index[Nc];
+				metadata_index++;
+				enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x + x] = color_index;
+				enc->symbols[index].data_map[y*enc->symbols[index].side_size.x + x] = 0;
+				module_count++;
+				getNextMetadataModuleInMaster(enc->symbols[index].side_size.y, enc->symbols[index].side_size.x, module_count, &x, &y);
 			}
 		}
 		//color palette
-		for(jab_int32 i=2; i<MIN(enc->color_number, 64); i++)	//skip the first two colors in finder pattern
+		for(jab_int32 i=0; i<MIN(enc->color_number, 64); i+=2)
 		{
-			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[master_palette_placement_index[0][i]%enc->color_number];
+			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[i];
 			enc->symbols[index].data_map[y*enc->symbols[index].side_size.x+x] = 0;
 			module_count++;
 			getNextMetadataModuleInMaster(enc->symbols[index].side_size.y, enc->symbols[index].side_size.x, module_count, &x, &y);
 
-			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[master_palette_placement_index[1][i]%enc->color_number];
+			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[i+1];
 			enc->symbols[index].data_map[y*enc->symbols[index].side_size.x+x] = 0;
 			module_count++;
 			getNextMetadataModuleInMaster(enc->symbols[index].side_size.y, enc->symbols[index].side_size.x, module_count, &x, &y);
 
-			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[master_palette_placement_index[2][i]%enc->color_number];
+			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[i];
 			enc->symbols[index].data_map[y*enc->symbols[index].side_size.x+x] = 0;
 			module_count++;
 			getNextMetadataModuleInMaster(enc->symbols[index].side_size.y, enc->symbols[index].side_size.x, module_count, &x, &y);
 
-			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[master_palette_placement_index[3][i]%enc->color_number];
+			enc->symbols[index].matrix  [y*enc->symbols[index].side_size.x+x] = palette_index[i+1];
 			enc->symbols[index].data_map[y*enc->symbols[index].side_size.x+x] = 0;
 			module_count++;
 			getNextMetadataModuleInMaster(enc->symbols[index].side_size.y, enc->symbols[index].side_size.x, module_count, &x, &y);
 		}
-		//metadata PartII
+		//metadata PartII and PartIII
 		if(!isDefaultMode(enc))
 		{
 			while(metadata_index < enc->symbols[index].metadata->length)
@@ -1382,24 +1412,24 @@ jab_boolean createMatrix(jab_encode* enc, jab_int32 index, jab_data* ecc_encoded
     	//color palette
         jab_int32 width=enc->symbols[index].side_size.x;
         jab_int32 height=enc->symbols[index].side_size.y;
-        for (jab_int32 i=2; i<MIN(enc->color_number, 64); i++)	//skip the first two colors in alignment pattern
+        for (jab_int32 i=0; i<MIN(enc->color_number, 64); i+=2)
         {
         	//left
-			enc->symbols[index].matrix  [slave_palette_position[i-2].y*width + slave_palette_position[i-2].x] = palette_index[slave_palette_placement_index[i]%enc->color_number];
-			enc->symbols[index].data_map[slave_palette_position[i-2].y*width + slave_palette_position[i-2].x] = 0;
+			enc->symbols[index].matrix  [slave_palette_position[i/2].y*width + slave_palette_position[i/2].x] = palette_index[i];
+			enc->symbols[index].data_map[slave_palette_position[i/2].y*width + slave_palette_position[i/2].x] = 0;
 			//top
-			enc->symbols[index].matrix  [slave_palette_position[i-2].x*width + (width-1-slave_palette_position[i-2].y)] = palette_index[slave_palette_placement_index[i]%enc->color_number];
-			enc->symbols[index].data_map[slave_palette_position[i-2].x*width + (width-1-slave_palette_position[i-2].y)] = 0;
+			enc->symbols[index].matrix  [slave_palette_position[i/2].x*width + (width-1-slave_palette_position[i/2].y)] = palette_index[i+1];
+			enc->symbols[index].data_map[slave_palette_position[i/2].x*width + (width-1-slave_palette_position[i/2].y)] = 0;
 			//right
-			enc->symbols[index].matrix  [(height-1-slave_palette_position[i-2].y)*width + (width-1-slave_palette_position[i-2].x)] = palette_index[slave_palette_placement_index[i]%enc->color_number];
-			enc->symbols[index].data_map[(height-1-slave_palette_position[i-2].y)*width + (width-1-slave_palette_position[i-2].x)] = 0;
+			enc->symbols[index].matrix  [(height-1-slave_palette_position[i/2].y)*width + (width-1-slave_palette_position[i/2].x)] = palette_index[i];
+			enc->symbols[index].data_map[(height-1-slave_palette_position[i/2].y)*width + (width-1-slave_palette_position[i/2].x)] = 0;
 			//bottom
-			enc->symbols[index].matrix  [(height-1-slave_palette_position[i-2].x)*width + slave_palette_position[i-2].y] = palette_index[slave_palette_placement_index[i]%enc->color_number];
-			enc->symbols[index].data_map[(height-1-slave_palette_position[i-2].x)*width + slave_palette_position[i-2].y] = 0;
+			enc->symbols[index].matrix  [(height-1-slave_palette_position[i/2].x)*width + slave_palette_position[i/2].y] = palette_index[i+1];
+			enc->symbols[index].data_map[(height-1-slave_palette_position[i/2].x)*width + slave_palette_position[i/2].y] = 0;
         }
     }
 #if TEST_MODE
-	FILE* fp = fopen("jab_enc_module_data.bin", "wb");
+	FILE* fp = fopen("enc_module_data.bin", "wb");
 #endif // TEST_MODE
     //Data placement
     jab_int32 written_mess_part=0;
@@ -1931,7 +1961,7 @@ jab_boolean fitDataIntoSymbols(jab_encode* enc, jab_data* encoded_data)
 
 		//add flag bit
 		s_payload_length++;
-		//add host metadata S length (master metadata Part III or slave metadata Part III)
+		//add host metadata S length (master metadata Part IV or slave metadata Part III)
 		if(i == 0)	s_payload_length += 4;
 		else		s_payload_length += 3;
 		//add slave metadata length
@@ -2215,6 +2245,7 @@ jab_int32 generateJABCode(jab_encode* enc, jab_data* data)
     {
         return 1;
     }
+
     //set master symbol version if not given
     if(enc->symbol_number == 1 && (enc->symbol_versions[0].x == 0 || enc->symbol_versions[0].y == 0))
     {

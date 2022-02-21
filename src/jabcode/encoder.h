@@ -28,45 +28,34 @@ static const jab_byte jab_default_palette[] = {0, 	0, 		0, 		//0: black
 											   };
 
 /**
- * @brief Color palette placement index in master symbol
-*/
-static const jab_int32 master_palette_placement_index[4][8] = {{0, 3, 5, 6, 1, 2, 4, 7}, {0, 6, 5, 3, 1, 2, 4, 7},
-															   {6, 0, 5, 3, 1, 2, 4, 7}, {3, 0, 5, 6, 1, 2, 4, 7}};
-
-/**
- * @brief Color palette placement index in slave symbol
-*/
-static const jab_int32 slave_palette_placement_index[8] = {3, 6, 5, 0, 1, 2, 4, 7};
-
-/**
  * @brief Finder pattern core color index in default palette
 */
-#define	FP0_CORE_COLOR	0
-#define	FP1_CORE_COLOR	0
-#define	FP2_CORE_COLOR	6
-#define	FP3_CORE_COLOR	3
+#define	FP0_CORE_COLOR	1
+#define	FP1_CORE_COLOR	2
+#define	FP2_CORE_COLOR	5
+#define	FP3_CORE_COLOR	6
 
 /**
  * @brief Alignment pattern core color index in default palette
 */
-#define	AP0_CORE_COLOR	3
-#define	AP1_CORE_COLOR	3
-#define	AP2_CORE_COLOR	3
-#define	AP3_CORE_COLOR	3
-#define APX_CORE_COLOR	6
+#define	AP0_CORE_COLOR	0
+#define	AP1_CORE_COLOR	0
+#define	AP2_CORE_COLOR	0
+#define	AP3_CORE_COLOR	0
+#define APX_CORE_COLOR	7
 
 /**
  * @brief Finder pattern core color index for all color modes
 */
-static const jab_byte fp0_core_color_index[] = {0, 0, FP0_CORE_COLOR, 0, 0, 0, 0, 0};
-static const jab_byte fp1_core_color_index[] = {0, 0, FP1_CORE_COLOR, 0, 0, 0, 0, 0};
-static const jab_byte fp2_core_color_index[] = {0, 2, FP2_CORE_COLOR, 14, 30, 60, 124, 252};
-static const jab_byte fp3_core_color_index[] = {0, 3, FP3_CORE_COLOR, 3, 7, 15, 15, 31};
+static const jab_byte fp0_core_color_index[] = {0, 0, FP0_CORE_COLOR, 1, 1, 3, 3, 3};
+static const jab_byte fp1_core_color_index[] = {0, 1, FP1_CORE_COLOR, 2, 6, 12, 12, 28};
+static const jab_byte fp2_core_color_index[] = {0, 2, FP2_CORE_COLOR, 13, 25, 51, 115, 227};
+static const jab_byte fp3_core_color_index[] = {0, 3, FP3_CORE_COLOR, 14, 30, 60, 124, 252};
 /**
  * @brief Alignment pattern core color index for all color modes
 */
-static const jab_byte apn_core_color_index[] = {0, 3, AP0_CORE_COLOR, 3, 7, 15, 15, 31};
-static const jab_byte apx_core_color_index[] = {0, 2, APX_CORE_COLOR, 14, 30, 60, 124, 252};
+static const jab_byte apn_core_color_index[] = {0, 4, AP0_CORE_COLOR, 0, 0, 0, 0, 0};
+static const jab_byte apx_core_color_index[] = {0, 5, APX_CORE_COLOR, 15, 31, 63, 127, 255};
 
 /**
  * @brief Finder pattern types
@@ -111,11 +100,6 @@ static const jab_vector2d jab_symbol_pos[MAX_SYMBOL_NUMBER] =
 			{ 0,-5}, {-1,-4}, { 1,-4}, {-2,-3}, { 2,-3}, {-3,-2}, { 3,-2}, {-4,-1},	{ 4,-1}, { 0, 5},
 			{-1, 4}, { 1, 4}, {-2, 3}, { 2, 3}, {-3, 2}, { 3, 2}, {-4, 1}, { 4, 1}, {-5, 0}, { 5, 0}
 		};
-
-/**
- * @brief Nc color encoding table
-*/
-static const jab_byte nc_color_encode_table[8][2] = {{0,0}, {0,3}, {0,6}, {3,0}, {3,3}, {3,6}, {6,0}, {6,3}};
 
 /**
  * @brief Encoding table
@@ -224,53 +208,6 @@ static const jab_float ecclevel2coderate[11] = {0.55f, 0.63f, 0.57f, 0.55f, 0.50
 */
 static const jab_int32 ecclevel2wcwr[11][2] = {{4, 9}, {3, 8}, {3, 7}, {4, 9}, {3, 6}, {4, 7}, {4, 6}, {3, 4}, {4, 5}, {5, 6}, {6, 7}};
 
-/**
- * @brief Positions of finder/alignment patterns (side-version 1-32)
-*/
-static const jab_int32 jab_ap_pos[32][9] = { {4, 18, 0, 0, 0, 0, 0, 0, 0},
-											 {4, 22, 0, 0, 0, 0, 0, 0, 0},
-											 {4, 26, 0, 0, 0, 0, 0, 0, 0},
-											 {4, 30, 0, 0, 0, 0, 0, 0, 0},
-											 {4, 34, 0, 0, 0, 0, 0, 0, 0},
-											 {4, 17, 38, 0, 0, 0, 0, 0, 0},
-											 {4, 20, 42, 0, 0, 0, 0, 0, 0},
-											 {4, 23, 46, 0, 0, 0, 0, 0, 0},
-											 {4, 26, 50, 0, 0, 0, 0, 0, 0},
-											 {4, 14, 32, 54, 0, 0, 0, 0, 0},
-											 {4, 17, 39, 58, 0, 0, 0, 0, 0},
-											 {4, 20, 46, 62, 0, 0, 0, 0, 0},
-											 {4, 23, 44, 66, 0, 0, 0, 0, 0},
-											 {4, 26, 37, 51, 70, 0, 0, 0, 0},
-											 {4, 14, 36, 58, 74, 0, 0, 0, 0},
-											 {4, 17, 39, 56, 78, 0, 0, 0, 0},
-											 {4, 20, 42, 63, 82, 0, 0, 0, 0},
-											 {4, 23, 38, 54, 70, 86, 0, 0, 0},
-											 {4, 26, 38, 56, 77, 90, 0, 0, 0},
-											 {4, 14, 33, 53, 72, 94, 0, 0, 0},
-											 {4, 17, 38, 59, 79, 98, 0, 0, 0},
-											 {4, 20, 36, 53, 70, 86, 102, 0, 0},
-											 {4, 23, 36, 55, 74, 93, 106, 0, 0},
-											 {4, 26, 36, 58, 79, 100, 110, 0, },
-											 {4, 14, 36, 58, 80, 92, 114, 0, 0},
-											 {4, 17, 34, 52, 70, 88, 99, 118, 0},
-											 {4, 20, 37, 54, 72, 89, 106, 122, 0},
-											 {4, 23, 38, 56, 74, 92, 113, 126, 0},
-											 {4, 26, 36, 58, 78, 98, 120, 130, 0},
-											 {4, 14, 32, 49, 67, 84, 102, 112, 134},
-											 {4, 17, 35, 53, 71, 89, 107, 119, 138},
-											 {4, 20, 38, 55, 73, 91, 108, 126, 142}
-										   };
-/**
- * @brief Number of finder/alignment patterns on row/column (side-version 1-32)
-*/
-static const jab_int32 jab_ap_num[32] = {2, 2, 2, 2, 2,
-										 3, 3, 3, 3,
-										 4, 4, 4, 4,
-										 5, 5, 5, 5,
-										 6, 6, 6, 6,
-										 7, 7, 7, 7,
-										 8, 8, 8, 8,
-										 9, 9, 9};
 
 extern void interleaveData(jab_data* data);
 extern jab_int32 maskCode(jab_encode* enc, jab_code* cp);
