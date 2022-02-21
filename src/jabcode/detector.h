@@ -14,11 +14,8 @@
 #ifndef JABCODE_DETECTOR_H
 #define JABCODE_DETECTOR_H
 
-#define TEST_MODE			0
-#if TEST_MODE
-jab_bitmap* test_mode_bitmap;
-jab_int32	test_mode_color;
-#endif
+#define TEST_MODE			1
+
 
 #define MAX_MODULES 		145	//the number of modules in side-version 32
 #define MAX_SYMBOL_ROWS		3

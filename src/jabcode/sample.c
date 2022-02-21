@@ -17,6 +17,7 @@
 #include "jabcode.h"
 #include "detector.h"
 #include "decoder.h"
+#include "sample.h"
 
 #define SAMPLE_AREA_WIDTH	(CROSS_AREA_WIDTH / 2 - 2) //width of the columns where the metadata and palette in slave symbol are located
 #define SAMPLE_AREA_HEIGHT	20	//height of the metadata rows including the first row, though it does not contain metadata

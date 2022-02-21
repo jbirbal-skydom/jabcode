@@ -26,6 +26,12 @@
  * @param module_size the module size
  * @return JAB_SUCCESS | JAB_FAILURE
 */
+
+#if TEST_MODE
+jab_bitmap* test_mode_bitmap;
+jab_int32	test_mode_color;
+#endif
+
 jab_boolean checkPatternCross(jab_int32* state_count, jab_float* module_size)
 {
     jab_int32 layer_number = 3;
