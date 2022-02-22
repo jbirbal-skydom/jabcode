@@ -14,3 +14,13 @@ $(OBJECTS): %.o: %.c
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
+
+
+all: 
+	cd ../jabcodeReader && $(MAKE)
+	cd ../jabcodeWriter && $(MAKE) 	
+
+
+purge:
+	cd ../jabcodeReader && $(MAKE) clean
+	cd ../jabcodeWriter && $(MAKE) clean
