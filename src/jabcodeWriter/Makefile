@@ -2,7 +2,7 @@ PREFIX 	=
 CC 	= $(PREFIX)gcc
 CFLAGS	 = -O2 -std=c11
 
-TARGET = bin/jabcodeWriter
+TARGET = ../jabcode/build/jabcodeWriter
 
 OBJECTS = $(patsubst %.c,%.o,$(wildcard *.c))
 
