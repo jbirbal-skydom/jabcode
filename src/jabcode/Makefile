@@ -14,3 +14,4 @@ $(OBJECTS): %.o: %.c
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
+#make -no-pie
