@@ -4,3 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+# Library configuration
+[lib]
+path = "src/lib.rs"
+
+
+# Binary configuration
+[[bin]]
+name = "your_executable_name"
+path = "src/main.rs"

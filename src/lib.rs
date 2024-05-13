@@ -9,7 +9,7 @@ mod mask;
 mod perspective_transform;
 mod image;
 mod interleave;
-mod util;
+pub mod util;
 
 pub use encoder::*;
 pub use decoder::*;
