@@ -53,7 +53,7 @@ pub fn allocate_memory<T>(size: usize) -> Result<Vec<T>, JABCodeError> {
     if size > MAX_ALLOWABLE_SIZE {  // Define a reasonable MAX_ALLOWABLE_SIZE
         return Err(JABCodeError::MemoryAllocationFailed("Requested size too large".to_string()));
     }
-    let mut vec = Vec::with_capacity(size);
+    let vec = Vec::with_capacity(size);
     // vec.push(Default::default());  //  Force memory allocation
     Ok(vec)
 }
@@ -62,57 +62,57 @@ pub fn allocate_memory<T>(size: usize) -> Result<Vec<T>, JABCodeError> {
 // types
 type JabByte = u8;
 type JabChar = i8;
-type JabBoolean = bool;
+// type JabBoolean = bool;
 type JabInt32 = i32;
-type JabUint32 = u32;
-type JabInt16 = i16;
-type JabUint16 = u16;
-type JabInt64 = i64;
-type JabUint64 = u64;
+// type JabUint32 = u32;
+// type JabInt16 = i16;
+// type JabUint16 = u16;
+// type JabInt64 = i64;
+// type JabUint64 = u64;
 type JabFloat = f32;
-type JabDouble = f64;
+// type JabDouble = f64;
 
 
 //finder pattern
-const 	FP0_CORE_COLOR: usize = 0;
-const 	FP1_CORE_COLOR: usize = 0;
-const 	FP2_CORE_COLOR: usize = 6;
-const 	FP3_CORE_COLOR: usize = 3;
+// const 	FP0_CORE_COLOR: usize = 0;
+// const 	FP1_CORE_COLOR: usize = 0;
+// const 	FP2_CORE_COLOR: usize = 6;
+// const 	FP3_CORE_COLOR: usize = 3;
 
 
 
-const LPDC_METADATA_SEED: u64 = 38545;
-const LPDC_MESSAGE_SEED: u64 = 785465;
+// const LPDC_METADATA_SEED: u64 = 38545;
+// const LPDC_MESSAGE_SEED: u64 = 785465;
 
-const MAX_COLOR_NUMBER: usize = 256;
-const MAX_SIZE_ENCODING_MODE: usize = 256;
-const JAB_ENCODING_MODES: usize = 6;
-const ENC_MAX: usize = 1000000;
-const NUMBER_OF_MASK_PATTERNS: usize = 8;
-const DEFAULT_SYMBOL_NUMBER: usize = 1;
-const DEFAULT_MODULE_SIZE: usize = 12;
-const DEFAULT_COLOR_NUMBER: usize = 8;
-const DEFAULT_MODULE_COLOR_MODE: usize = 2;
-const DEFAULT_ECC_LEVEL: usize = 3;
-const DEFAULT_MASKING_REFERENCE: usize = 7;
-const DISTANCE_TO_BORDER: usize = 4;
-const MAX_ALIGNMENT_NUMBER: usize = 9;
-const COLOR_PALETTE_NUMBER: usize = 4;
-const BITMAP_BITS_PER_PIXEL: usize = 32;
-const BITMAP_BITS_PER_CHANNEL: usize = 8;
-const BITMAP_CHANNEL_COUNT: usize = 4;
-const JAB_SUCCESS: bool = true;
-const JAB_FAILURE: bool = false;
-const NORMAL_DECODE: usize = 0;
-const COMPATIBLE_DECODE: usize = 1;
+// const MAX_COLOR_NUMBER: usize = 256;
+// const MAX_SIZE_ENCODING_MODE: usize = 256;
+// const JAB_ENCODING_MODES: usize = 6;
+// const ENC_MAX: usize = 1000000;
+// const NUMBER_OF_MASK_PATTERNS: usize = 8;
+// const DEFAULT_SYMBOL_NUMBER: usize = 1;
+// const DEFAULT_MODULE_SIZE: usize = 12;
+// const DEFAULT_COLOR_NUMBER: usize = 8;
+// const DEFAULT_MODULE_COLOR_MODE: usize = 2;
+// const DEFAULT_ECC_LEVEL: usize = 3;
+// const DEFAULT_MASKING_REFERENCE: usize = 7;
+// const DISTANCE_TO_BORDER: usize = 4;
+// const MAX_ALIGNMENT_NUMBER: usize = 9;
+// const COLOR_PALETTE_NUMBER: usize = 4;
+// const BITMAP_BITS_PER_PIXEL: usize = 32;
+// const BITMAP_BITS_PER_CHANNEL: usize = 8;
+// const BITMAP_CHANNEL_COUNT: usize = 4;
+// const JAB_SUCCESS: bool = true;
+// const JAB_FAILURE: bool = false;
+// const NORMAL_DECODE: usize = 0;
+// const COMPATIBLE_DECODE: usize = 1;
 
-fn version_to_size(version: usize) -> usize {
-    version * 4 + 17
-}
+// fn version_to_size(version: usize) -> usize {
+//     version * 4 + 17
+// }
 
-fn size_to_version(size: usize) -> usize {
-    (size - 17) / 4
-}
+// fn size_to_version(size: usize) -> usize {
+//     (size - 17) / 4
+// }
 
 
 /// 2-dimensional integer vector
@@ -196,16 +196,16 @@ pub struct JabCodeData {
 
 
 //Color profile
-static JAB_DEFAULT_PALETTE: [u8; 24] = [
-    0,   0,   0,   // 0: black
-    0,   0, 255,   // 1: blue
-    0, 255,   0,   // 2: green
-    0, 255, 255,   // 3: cyan
-    255, 0,   0,   // 4: red
-    255, 0, 255,   // 5: magenta
-    255, 255, 0,   // 6: yellow
-    255, 255, 255, // 7: white
-];
+// static JAB_DEFAULT_PALETTE: [u8; 24] = [
+//     0,   0,   0,   // 0: black
+//     0,   0, 255,   // 1: blue
+//     0, 255,   0,   // 2: green
+//     0, 255, 255,   // 3: cyan
+//     255, 0,   0,   // 4: red
+//     255, 0, 255,   // 5: magenta
+//     255, 255, 0,   // 6: yellow
+//     255, 255, 255, // 7: white
+// ];
 
 
 impl Default for JabCodeData {
@@ -242,17 +242,17 @@ mod tests {
         assert_eq!(result.unwrap().capacity(), 10);
     }
 
-    #[test]
-    fn test_version_to_size() {
-        assert_eq!(version_to_size(1), 21);
-        assert_eq!(version_to_size(2), 25);
-    }
+    // #[test]
+    // fn test_version_to_size() {
+    //     assert_eq!(version_to_size(1), 21);
+    //     assert_eq!(version_to_size(2), 25);
+    // }
 
-    #[test]
-    fn test_size_to_version() {
-        assert_eq!(size_to_version(21), 1);
-        assert_eq!(size_to_version(25), 2);
-    }
+    // #[test]
+    // fn test_size_to_version() {
+    //     assert_eq!(size_to_version(21), 1);
+    //     assert_eq!(size_to_version(25), 2);
+    // }
 
     #[test]
     fn test_default_jab_code_data() {

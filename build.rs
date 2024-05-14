@@ -1,5 +1,5 @@
 use std::process::Command;
-use std::env;
+// use std::env;
 
 fn main() {
     // Embedding the build date

@@ -8,7 +8,7 @@ edition = "2021"
 # Library configuration
 [lib]
 path = "src/lib.rs"
-
+name = "jabcode_lib"  # Naming the library for clarity
 
 # Binary configuration
 [[bin]]

@@ -1,25 +1,25 @@
 // jabcode/src/lib.rs
 
-mod encoder;
-mod decoder;
-mod detector;
-mod binarizer;
-mod ldpc;
-mod mask;
-mod perspective_transform;
-mod image;
-mod interleave;
+pub mod encoder;
+pub mod decoder;
+pub mod detector;
+pub mod binarizer;
+pub mod ldpc;
+pub mod mask;
+pub mod perspective_transform;
+pub mod image;
+pub mod interleave;
 pub mod util;
 
-pub use encoder::*;
-pub use decoder::*;
-pub use detector::*;
-pub use binarizer::*;
-pub use ldpc::*;
-pub use mask::*;
-pub use perspective_transform::*;
-pub use image::*;
-pub use interleave::*;
+// pub use encoder::*;
+// pub use decoder::*;
+// pub use detector::*;
+// pub use binarizer::*;
+// pub use ldpc::*;
+// pub use mask::*;
+// pub use perspective_transform::*;
+// pub use image::*;
+// pub use interleave::*;
 pub use util::*;
 
 #[derive(Debug)]
@@ -35,15 +35,18 @@ impl JABCode {
         }
     }
 
-    pub fn encode(&mut self, data: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn encode(&mut self, _data: &[u8]) -> Result<Vec<u8>, String> {
         // Implement the encoding functionality
-        // Use the modules and functions from the other files
         unimplemented!()
     }
 
-    pub fn decode(&mut self, data: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn decode(&mut self, _data: &[u8]) -> Result<Vec<u8>, String> {
         // Implement the decoding functionality
-        // Use the modules and functions from the other files
         unimplemented!()
+    }
+
+    // Example function that could be called from `writer.rs`
+    pub fn example_function() -> String {
+        "This is an example function from lib.rs".to_string()
     }
 }

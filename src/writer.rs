@@ -1,8 +1,16 @@
+// jabcode/src/writer.rs
+extern crate jabcode_lib;
+
+use jabcode_lib::*;
+
 use std::env;
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::Read;
 use std::process;
+// use jabcode_lib::*;
 
+
+#[derive(Debug)]
 struct JabData {
     data: Vec<u8>,
 }
@@ -101,6 +109,12 @@ fn parse_command_line_parameters(args: &[String]) -> Result<(), String> {
         return Err("No output filename provided".to_string());
     }
 
+        // Final debug print to confirm all arguments are processed
+        if cfg!(debug_assertions) {
+            println!("Debug: Final parsed arguments: {:?}", args);
+            println!("Debug: Final state: {:?}", (data, filename, color_number, module_size, master_symbol_width, master_symbol_height, symbol_number, color_space));
+        }
+
     // Further processing here, like encoding the data, saving to file, etc.
     // For simplicity, not fully implemented here.
 
@@ -108,6 +122,7 @@ fn parse_command_line_parameters(args: &[String]) -> Result<(), String> {
 }
 
 fn main() {
+    println!("{}", JABCode::example_function());
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -116,7 +131,14 @@ fn main() {
     }
 
     match parse_command_line_parameters(&args) {
-        Ok(_) => println!("Operation completed successfully"),
+        Ok(_) => {
+            if cfg!(debug_assertions) {
+                println!("Debug: Parsed arguments successfully: {:?}", args);
+                println!()
+            }
+            println!("Operation completed successfully")
+    
+    },
         Err(e) => {
             eprintln!("Error: {}", e);
             process::exit(1);
