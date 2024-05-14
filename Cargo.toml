@@ -12,5 +12,9 @@ path = "src/lib.rs"
 
 # Binary configuration
 [[bin]]
-name = "your_executable_name"
-path = "src/main.rs"
+name = "jabReader"
+path = "src/reader.rs"
+
+[[bin]]
+name = "jabWriter"
+path = "src/writer.rs"
