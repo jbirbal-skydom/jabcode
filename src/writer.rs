@@ -1,7 +1,7 @@
 // jabcode/src/writer.rs
-extern crate jabcode_lib;
+extern crate jabcode;
 
-use jabcode_lib::*;
+use jabcode::*;
 
 use std::env;
 use std::fs::File;

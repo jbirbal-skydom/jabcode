@@ -47,6 +47,7 @@ impl JABCode {
 
     // Example function that could be called from `writer.rs`
     pub fn example_function() -> String {
-        "This is an example function from lib.rs".to_string()
+        let formatted_string = format!("\njabcodeWriter (Version {} Build date: {}) - Fraunhofer SIT\n", env!("CARGO_PKG_VERSION"), env!("BUILD_DATE"));
+        formatted_string   
     }
 }

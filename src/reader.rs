@@ -1,7 +1,7 @@
 use std::env;
 use std::fs::File;
-use std::io::{self, Read, Write};
-use std::process;
+use std::io::{Read, Write};
+// use std::process;
 
 fn print_usage() {
     println!("\njabcodeReader (Version {} Build date: {}) - Fraunhofer SIT\n", env!("CARGO_PKG_VERSION"), env!("BUILD_DATE"));
