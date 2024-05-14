@@ -44,7 +44,7 @@ fn print_usage() {
 }
 
 fn parse_command_line_parameters(args: &[String]) -> Result<(), String> {
-    let mut data = None;
+    let mut message = None;
     let mut filename = None;
     let mut color_number = 8; // default value
     let mut module_size = 12; // default value
@@ -58,14 +58,14 @@ fn parse_command_line_parameters(args: &[String]) -> Result<(), String> {
         match arg.as_str() {
             "--input" => {
                 let input = it.next().ok_or("Expected value after --input")?;
-                data = Some(JabData::new(input.as_bytes().to_vec()));
+                message = Some(JabData::new(input.as_bytes().to_vec()));
             }
             "--input-file" => {
                 let file_path = it.next().ok_or("Expected filename after --input-file")?;
                 let mut file = File::open(file_path).map_err(|_| "Failed to open input file")?;
                 let mut contents = Vec::new();
                 file.read_to_end(&mut contents).map_err(|_| "Failed to read input file")?;
-                data = Some(JabData::new(contents));
+                message = Some(JabData::new(contents));
             }
             "--output" => {
                 filename = it.next().clone();
@@ -102,17 +102,23 @@ fn parse_command_line_parameters(args: &[String]) -> Result<(), String> {
         }
     }
 
-    if data.is_none() {
+    if message.is_none() {
         return Err("No input data provided".to_string());
     }
     if filename.is_none() {
         return Err("No output filename provided".to_string());
     }
 
+    if let Some(ref jab_data) = message {
+        println!("Debug: Final state: {:?}", jab_data.data);
+    } else {
+        println!("No input data provided");
+    }
+
         // Final debug print to confirm all arguments are processed
         if cfg!(debug_assertions) {
             println!("Debug: Final parsed arguments: {:?}", args);
-            println!("Debug: Final state: {:?}", (data, filename, color_number, module_size, master_symbol_width, master_symbol_height, symbol_number, color_space));
+            println!("Debug: Final state: {:?}", (message, filename, color_number, module_size, master_symbol_width, master_symbol_height, symbol_number, color_space));
         }
 
     // Further processing here, like encoding the data, saving to file, etc.
